@@ -2,6 +2,7 @@ package com.restaurantmanagement.order_api.service;
 
 import com.restaurantmanagement.order_api.entity.MenuItem;
 import com.restaurantmanagement.order_api.entity.Restaurant;
+import com.restaurantmanagement.order_api.exception.NotFoundException;
 import com.restaurantmanagement.order_api.repository.RestaurantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,7 @@ public class RestaurantService {
     // Return Restaurant instead of String
     public Restaurant getRestaurantDetails(Long restaurantId) {
         return restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new RuntimeException("Restaurant not found with id: " + restaurantId));
+                .orElseThrow(() -> new NotFoundException("Restaurant",restaurantId));
     }
 
     public List<Restaurant> getAllRestaurants() {
