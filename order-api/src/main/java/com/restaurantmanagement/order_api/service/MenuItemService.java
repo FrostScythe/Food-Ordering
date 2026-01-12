@@ -2,6 +2,7 @@ package com.restaurantmanagement.order_api.service;
 
 import com.restaurantmanagement.order_api.entity.MenuItem;
 import com.restaurantmanagement.order_api.entity.Restaurant;
+import com.restaurantmanagement.order_api.exception.BadRequestException;
 import com.restaurantmanagement.order_api.repository.MenuItemRepository;
 import com.restaurantmanagement.order_api.repository.RestaurantRepository;
 import jakarta.transaction.Transactional;
@@ -58,8 +59,12 @@ public class MenuItemService {
         MenuItem existingItem = getMenuItem(restaurantId, menuItemId);
 
         existingItem.setName(updatedItem.getName());
+        double cost = updatedItem.getPrice();
+        if (cost < 0) {
+            throw new BadRequestException("Price cannot be negative");
+        } else existingItem.setPrice(cost);
+
         existingItem.setDescription(updatedItem.getDescription());
-        existingItem.setPrice(updatedItem.getPrice());
 
         return menuItemRepository.save(existingItem);
     }

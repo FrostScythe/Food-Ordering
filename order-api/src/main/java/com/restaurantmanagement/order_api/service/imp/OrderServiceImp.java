@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,52 +33,55 @@ public class OrderServiceImp implements OrderService {
     private MenuItemRepository menuItemRepository;
 
     @Override
-    public Order placeOrder(Long userId, Long restaurantId, Map<Long, Integer> itemsWithQuantity) {
-
-        // Fetch User - use NotFoundException
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User", userId));
-
-        // Fetch Restaurant - use NotFoundException
-        Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant", restaurantId));
-
-        // Validate input - add this at the start
+    public Order placeOrder(Long userId, Long restaurantId, Map<Long, Integer> itemsWithQuantity) {// Validate input early
         if (itemsWithQuantity == null || itemsWithQuantity.isEmpty()) {
             throw new BadRequestException("Order must contain at least one item");
         }
 
+        // Fetch user & restaurant
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User", userId));
+
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaurant", restaurantId));
+
+        // Validate quantities first
+        for (Map.Entry<Long, Integer> entry : itemsWithQuantity.entrySet()) {
+            if (entry.getValue() == null || entry.getValue() <= 0) {
+                throw new BadRequestException("Invalid quantity for menu item: " + entry.getKey());
+            }
+        }
+
+        // Fetch all menu items in one query
+        List<MenuItem> menuItems = menuItemRepository.findAllById(itemsWithQuantity.keySet());
+        if (menuItems.size() != itemsWithQuantity.size()) {
+            throw new NotFoundException("MenuItem", null);
+        }
+
         double totalPrice = 0;
         int totalItemCount = 0;
-        List<MenuItem> orderedItems = new ArrayList<>();
 
-        // Calculate price using quantity
-        for (Map.Entry<Long, Integer> entry : itemsWithQuantity.entrySet()) {
-            Long menuItemId = entry.getKey();
-            Integer quantity = entry.getValue();
+        // Use Map instead of duplicates
+        Map<MenuItem, Integer> orderedItems = new HashMap<>();
 
-            // this validation
-            if (quantity == null || quantity <= 0) {
-                throw new BadRequestException("Quantity must be greater than 0 for menu item: " + menuItemId);
+        for (MenuItem item : menuItems) {
+            // Ensure item belongs to restaurant
+            if (!item.getRestaurant().getId().equals(restaurantId)) {
+                throw new BadRequestException("MenuItem " + item.getId() + " does not belong to this restaurant");
             }
 
-            // Fetch MenuItem - use NotFoundException
-            MenuItem item = menuItemRepository.findById(menuItemId)
-                    .orElseThrow(() -> new NotFoundException("MenuItem", menuItemId));
+            int qty = itemsWithQuantity.get(item.getId());
+            orderedItems.put(item, qty);
 
-            totalPrice += item.getPrice() * quantity;
-            totalItemCount += quantity;
-
-            for (int i = 0; i < quantity; i++) {
-                orderedItems.add(item);
-            }
+            totalPrice += item.getPrice() * qty;
+            totalItemCount += qty;
         }
 
         // Create Order
         Order order = new Order();
         order.setUser(user);
         order.setRestaurant(restaurant);
-        order.setOrderedItems(orderedItems);
+        order.setOrderedItems((List<MenuItem>) orderedItems);   // change type in entity
         order.setItemCount(totalItemCount);
         order.setTotalPrice(totalPrice);
         order.setStatus(OrderStatus.PLACED);

@@ -2,6 +2,7 @@ package com.restaurantmanagement.order_api.service;
 
 import com.restaurantmanagement.order_api.entity.MenuItem;
 import com.restaurantmanagement.order_api.entity.Restaurant;
+import com.restaurantmanagement.order_api.exception.BadRequestException;
 import com.restaurantmanagement.order_api.exception.NotFoundException;
 import com.restaurantmanagement.order_api.repository.RestaurantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,9 +44,11 @@ public class RestaurantService {
         if (updatedRestaurant.getAddress() != null) {
             existingRestaurant.setAddress(updatedRestaurant.getAddress());
         }
-        if (updatedRestaurant.getPhoneNumber() != null) {
-            existingRestaurant.setPhoneNumber(updatedRestaurant.getPhoneNumber());
-        }
+
+        String phone = updatedRestaurant.getPhoneNumber();
+        if (phone == null || phone.trim().isEmpty() || phone.equals("0")) {
+            throw new BadRequestException("Phone number cannot be empty or zero");
+        } else existingRestaurant.setPhoneNumber(phone);
 
         return restaurantRepository.save(existingRestaurant);
     }
