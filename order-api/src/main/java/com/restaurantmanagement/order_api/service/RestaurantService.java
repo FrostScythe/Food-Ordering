@@ -56,7 +56,7 @@ public class RestaurantService {
     // Return void instead of String
     public void deleteRestaurant(Long restaurantId) {
         if (!restaurantRepository.existsById(restaurantId)) {
-            throw new RuntimeException("Restaurant not found with id: " + restaurantId);
+            throw new NotFoundException("Restaurant", restaurantId);
         }
         restaurantRepository.deleteById(restaurantId);
     }

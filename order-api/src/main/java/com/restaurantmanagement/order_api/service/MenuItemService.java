@@ -4,6 +4,7 @@ import com.restaurantmanagement.order_api.entity.MenuItem;
 import com.restaurantmanagement.order_api.entity.Restaurant;
 import com.restaurantmanagement.order_api.exception.BadRequestException;
 import com.restaurantmanagement.order_api.exception.ForbiddenRequestException;
+import com.restaurantmanagement.order_api.exception.NotFoundException;
 import com.restaurantmanagement.order_api.repository.MenuItemRepository;
 import com.restaurantmanagement.order_api.repository.RestaurantRepository;
 import jakarta.transaction.Transactional;
@@ -26,7 +27,7 @@ public class MenuItemService {
     // Return MenuItem instead of String
     public MenuItem createMenuItem(Long restaurantId, MenuItem menuItem) {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new RuntimeException("Restaurant not found with id: " + restaurantId));
+                .orElseThrow(() -> new NotFoundException("Restaurant", restaurantId));
 
         menuItem.setRestaurant(restaurant);
         return menuItemRepository.save(menuItem);
@@ -35,7 +36,7 @@ public class MenuItemService {
     // Return MenuItem instead of ResponseEntity<String>
     public MenuItem getMenuItem(Long restaurantId, Long menuItemId) {
         MenuItem menuItem = menuItemRepository.findById(menuItemId)
-                .orElseThrow(() -> new RuntimeException("Menu item not found with id: " + menuItemId));
+                .orElseThrow(() -> new NotFoundException("MenuItem", menuItemId));
 
         // Verify it belongs to the specified restaurant
         if (!menuItem.getRestaurant().getId().equals(restaurantId)) {
@@ -48,9 +49,8 @@ public class MenuItemService {
 
     // Add this method for getting restaurant menu
     public List<MenuItem> getMenuByRestaurant(Long restaurantId) {
-        // Verify restaurant exists
         if (!restaurantRepository.existsById(restaurantId)) {
-            throw new RuntimeException("Restaurant not found with id: " + restaurantId);
+            throw new NotFoundException("Restaurant", restaurantId);
         }
 
         return menuItemRepository.findByRestaurantId(restaurantId);
