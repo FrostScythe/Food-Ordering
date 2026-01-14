@@ -3,6 +3,7 @@ package com.restaurantmanagement.order_api.service;
 import com.restaurantmanagement.order_api.entity.MenuItem;
 import com.restaurantmanagement.order_api.entity.Restaurant;
 import com.restaurantmanagement.order_api.exception.BadRequestException;
+import com.restaurantmanagement.order_api.exception.ForbiddenRequestException;
 import com.restaurantmanagement.order_api.repository.MenuItemRepository;
 import com.restaurantmanagement.order_api.repository.RestaurantRepository;
 import jakarta.transaction.Transactional;
@@ -38,7 +39,8 @@ public class MenuItemService {
 
         // Verify it belongs to the specified restaurant
         if (!menuItem.getRestaurant().getId().equals(restaurantId)) {
-            throw new RuntimeException("Menu item does not belong to this restaurant");
+            throw new ForbiddenRequestException("Access denied: Menu item " + menuItemId +
+                    " does not belong to restaurant " + restaurantId);
         }
 
         return menuItem;

@@ -61,17 +61,19 @@ public class OrderServiceImp implements OrderService {
         double totalPrice = 0;
         int totalItemCount = 0;
 
-        // Use Map instead of duplicates
-        Map<MenuItem, Integer> orderedItems = new HashMap<>();
+        List<MenuItem> orderedItemsList = new ArrayList<>();
 
         for (MenuItem item : menuItems) {
-            // Ensure item belongs to restaurant
             if (!item.getRestaurant().getId().equals(restaurantId)) {
                 throw new BadRequestException("MenuItem " + item.getId() + " does not belong to this restaurant");
             }
 
             int qty = itemsWithQuantity.get(item.getId());
-            orderedItems.put(item, qty);
+
+            // Add the item multiple times based on quantity
+            for (int i = 0; i < qty; i++) {
+                orderedItemsList.add(item);
+            }
 
             totalPrice += item.getPrice() * qty;
             totalItemCount += qty;
@@ -81,7 +83,7 @@ public class OrderServiceImp implements OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setRestaurant(restaurant);
-        order.setOrderedItems((List<MenuItem>) orderedItems);   // change type in entity
+        order.setOrderedItems(orderedItemsList);
         order.setItemCount(totalItemCount);
         order.setTotalPrice(totalPrice);
         order.setStatus(OrderStatus.PLACED);
